@@ -14,14 +14,33 @@
 #include <vector>
 #include <unordered_map>
 #include <memory>
+#include <algorithm>
 
 
 
 // CDijkstraTransportationPlanner member functions
 // Constructor for the Dijkstra Transportation Planner 
-CDijkstraTransportationPlanner::CDijkstraTransportationPlanner(std::shared_ptr<SConfiguration> config)
-    : DImplementation(std::make_unique<SImplementation>(config)) {
-    
+std::shared_ptr<CStreetMap::SNode> CDijkstraTransportationPlanner::SortedNodeByIndex(std::size_t index) const noexcept {
+    auto streetMap = DImplementation->config->StreetMap();//functions in streetmap.h
+    std::vector<std::shared_ptr<CStreetMap::SNode>> nodes;
+
+    //Copy all nodes to a local vector
+    for (std::size_t i = 0; i < streetMap->NodeCount(); ++i) {
+        nodes.push_back(streetMap->NodeByIndex(i));
+    }
+
+    //Sort nodes by their ID
+    std::sort(nodes.begin(), nodes.end(), [](const std::shared_ptr<CStreetMap::SNode>& a, const std::shared_ptr<CStreetMap::SNode>& b) {
+        return a->ID() < b->ID();
+    });//if successfully sorted, then a<b will return true
+
+    //Check if the index is valid and return the node
+    if (index < nodes.size()) {
+        return nodes[index];
+    }
+    else {//Index out of bounds
+        return nullptr; 
+    }
 }
 
 // Destructor for the Dijkstra Transportation Planner 
@@ -33,7 +52,7 @@ CDijkstraTransportationPlanner::~CDijkstraTransportationPlanner() {
 // Returns the number of nodes in the street map 
 std::size_t CDijkstraTransportationPlanner::NodeCount() const noexcept {
     
-    return 0;
+    return DImplementation->config->StreetMap()->NodeCount();
 }
 
 
@@ -43,7 +62,7 @@ std::size_t CDijkstraTransportationPlanner::NodeCount() const noexcept {
 // NodeCount(). The nodes are sorted by Node ID. 
 std::shared_ptr<CStreetMap::SNode> CDijkstraTransportationPlanner::SortedNodeByIndex(std::size_t index) const noexcept {
     
-    return DImplementation->sortedNodes[index];
+    
 }
 
 
