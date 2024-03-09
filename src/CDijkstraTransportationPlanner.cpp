@@ -15,32 +15,15 @@
 #include <unordered_map>
 #include <memory>
 #include <algorithm>
+#include <functional>
 
 
 
 // CDijkstraTransportationPlanner member functions
 // Constructor for the Dijkstra Transportation Planner 
-std::shared_ptr<CStreetMap::SNode> CDijkstraTransportationPlanner::SortedNodeByIndex(std::size_t index) const noexcept {
-    auto streetMap = DImplementation->config->StreetMap();//functions in streetmap.h
-    std::vector<std::shared_ptr<CStreetMap::SNode>> nodes;
-
-    //Copy all nodes to a local vector
-    for (std::size_t i = 0; i < streetMap->NodeCount(); ++i) {
-        nodes.push_back(streetMap->NodeByIndex(i));
-    }
-
-    //Sort nodes by their ID
-    std::sort(nodes.begin(), nodes.end(), [](const std::shared_ptr<CStreetMap::SNode>& a, const std::shared_ptr<CStreetMap::SNode>& b) {
-        return a->ID() < b->ID();
-    });//if successfully sorted, then a<b will return true
-
-    //Check if the index is valid and return the node
-    if (index < nodes.size()) {
-        return nodes[index];
-    }
-    else {//Index out of bounds
-        return nullptr; 
-    }
+CDijkstraTransportationPlanner(std::shared_ptr<SConfiguration> config) :DImplementation(std::make_unique<SImplementation>()) {
+    DImplementation->config = config;
+    auto streetMap = config->StreetMap();
 }
 
 // Destructor for the Dijkstra Transportation Planner 
@@ -61,8 +44,26 @@ std::size_t CDijkstraTransportationPlanner::NodeCount() const noexcept {
 // NodeCount(). nullptr is returned if index is greater than or equal to  
 // NodeCount(). The nodes are sorted by Node ID. 
 std::shared_ptr<CStreetMap::SNode> CDijkstraTransportationPlanner::SortedNodeByIndex(std::size_t index) const noexcept {
-    
-    
+    auto streetMap = DImplementation->config->StreetMap();//functions in streetmap.h
+    std::vector<std::shared_ptr<CStreetMap::SNode>> nodes;
+
+    //Copy all nodes to a local vector
+    for (std::size_t i = 0; i < streetMap->NodeCount(); ++i) {
+        nodes.push_back(streetMap->NodeByIndex(i));
+    }
+
+    //Sort nodes by their ID
+    std::sort(nodes.begin(), nodes.end(), [](const std::shared_ptr<CStreetMap::SNode>& a, const std::shared_ptr<CStreetMap::SNode>& b) {
+        return a->ID() < b->ID();
+        });//if successfully sorted, then a<b will return true
+
+    //Check if the index is valid and return the node
+    if (index < nodes.size()) {
+        return nodes[index];
+    }
+    else {//Index out of bounds
+        return nullptr;
+    }
 }
 
 
