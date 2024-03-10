@@ -1,6 +1,9 @@
 #include "DijkastraTransportationPlanner.h"
 #include "GeographicUtils.h" 
-
+#include "CDijkstraPathRouter.h"
+#include "OpenStreetMap.h"
+#include "TransportationPlannerConfig.h"
+#include "TransportationPlannerConfig.h"
 #include "BusSystem.h"
 #include "StreetMap.h"
 #include "DSVReader.h"
@@ -22,8 +25,19 @@
 // CDijkstraTransportationPlanner member functions
 // Constructor for the Dijkstra Transportation Planner 
 CDijkstraTransportationPlanner(std::shared_ptr<SConfiguration> config) :DImplementation(std::make_unique<SImplementation>()) {
+    auto pathRouter = std::make_unique<CDijkstraPathRouter>();
     DImplementation->config = config;
     auto streetMap = config->StreetMap();
+
+    for (std::size_t i = 0; i < streetMap->NodeCount(); ++i) {
+        auto node = streetMap->NodeByIndex(i);
+        
+        auto vertexId = pathRouter->AddVertex(node); 
+
+        
+    }
+
+    DImplementation->pathRouter = std::move(pathRouter);
 }
 
 // Destructor for the Dijkstra Transportation Planner 
@@ -39,18 +53,33 @@ std::size_t CDijkstraTransportationPlanner::NodeCount() const noexcept {
 }
 
 
-double GetDistance(std::shared_ptr<CStreetMap> streetMap, CStreetMap::TNodeID nodeID1, CStreetMap::TNodeID nodeID2) {
-    auto node1 = streetMap->NodeByID(nodeID1);
-    auto node2 = streetMap->NodeByID(nodeID2);
 
-    return SGeographicUtils::HaversineDistanceInMiles(node1->Location(), node2->Location());
+
+
+/*
+std::vector<CStreetMap::TNodeID> GetNeighbors(const COpenStreetMap::SImplementation& mapData, CStreetMap::TNodeID nodeID) {
+    std::unordered_set<CStreetMap::TNodeID> neighbors;
+
+    // iterate all paths
+    for (const auto& wayPair : mapData.DWayIDToWay) {
+        const auto& way = wayPair.second;
+
+        // 查找当前节点在path中的位置
+        auto it = std::find(way->Nodes.begin(), way->Nodes.end(), nodeID);
+        if (it != way->Nodes.end()) {
+            // 如果找到节点，添加前后节点为邻居（如果存在）
+            if (it != way->Nodes.begin()) {
+                neighbors.insert(*(it - 1));
+            }
+            if (it + 1 != way->Nodes.end()) {
+                neighbors.insert(*(it + 1));
+            }
+        }
+    }
+
+    return std::vector<CStreetMap::TNodeID>(neighbors.begin(), neighbors.end());
 }
-
-
-
-
-
-
+*/
 
 
 
@@ -90,7 +119,7 @@ std::shared_ptr<CStreetMap::SNode> CDijkstraTransportationPlanner::SortedNodeByI
 // shortest path if one exists. NoPathExists is returned if no path exists.  
 // The nodes of the shortest path are filled in the path parameter. 
 double CDijkstraTransportationPlanner::FindShortestPath(TNodeID src, TNodeID dest, std::vector<TNodeID>& path) {
-
+    /*
     auto streetMap = DImplementation->config->StreetMap();
 
 
@@ -106,7 +135,7 @@ double CDijkstraTransportationPlanner::FindShortestPath(TNodeID src, TNodeID des
     for (std::size_t i = 0; i < streetMap->NodeCount(); ++i) {
         distances[streetMap->NodeByIndex(i)->ID()] = NoPathExists;
     }
-
+    
     // priority queue, use std::greater<> to make it the smallest heap, which the smalleset number element will be picked, which is the shortest distance node.
     std::priority_queue<std::pair<double, TNodeID>, std::vector<std::pair<double, TNodeID>>, std::greater<>> pq;
 
@@ -115,6 +144,9 @@ double CDijkstraTransportationPlanner::FindShortestPath(TNodeID src, TNodeID des
     pq.push({ 0, src });
 
     while (!pq.empty()) {
+
+
+
         auto [dist, nodeID] = pq.top();//return the smallest element in pq as [dist, nodeID]
         pq.pop();
 
@@ -133,22 +165,28 @@ double CDijkstraTransportationPlanner::FindShortestPath(TNodeID src, TNodeID des
             path.insert(path.begin(), src); // insert sorce node.
             return totalDistance;
         }
+        
+        
 
-        //update the new shortest distance to all neighbor nodes
-        //need to write getneighbors()
-        for (const auto& neighbor : streetMap->GetNeighbors(nodeID)) {
-            double newDist = dist + HaversineDistanceInMiles(nodeID, neighbor);
-            if (newDist < distances[neighbor]) {
-                distances[neighbor] = newDist;
-                predecessors[neighbor] = nodeID;
-                pq.push({ newDist, neighbor });
-            }
+        
         }
     }
+    */
 
+    //use CDijkstraPathRouter to accomplish this function instead of coding Dijkstra directly
+    std::vector<TNodeID> temppath; // store the nodes on the path 
+    double totalDistance = pathRouter.FindShortestPath(src, dest, temppath); //use CDijkstraPathRouter find the shortest path
+
+    if (totalDistance != CDijkstraPathRouter::NoPathExists) {
+        path = temppath; // if found, update it.
+        return totalDistance;
+    }
+    else {
+        return CDijkstraPathRouter::NoPathExists; // if not path exists return nopathexists
+    }
     return NoPathExists; // if not path exists return nopathexists :(
 }
-}
+
 
 
 
