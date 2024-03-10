@@ -16,7 +16,7 @@
 #include <memory>
 #include <algorithm>
 #include <functional>
-
+#include <unordered_set>
 
 
 // CDijkstraTransportationPlanner member functions
@@ -37,6 +37,23 @@ std::size_t CDijkstraTransportationPlanner::NodeCount() const noexcept {
     
     return DImplementation->config->StreetMap()->NodeCount();
 }
+
+
+double GetDistance(std::shared_ptr<CStreetMap> streetMap, CStreetMap::TNodeID nodeID1, CStreetMap::TNodeID nodeID2) {
+    auto node1 = streetMap->NodeByID(nodeID1);
+    auto node2 = streetMap->NodeByID(nodeID2);
+
+    return SGeographicUtils::HaversineDistanceInMiles(node1->Location(), node2->Location());
+}
+
+
+
+
+
+
+
+
+
 
 
 
@@ -90,7 +107,7 @@ double CDijkstraTransportationPlanner::FindShortestPath(TNodeID src, TNodeID des
         distances[streetMap->NodeByIndex(i)->ID()] = NoPathExists;
     }
 
-    // priority queue, use std::greater<> to make it the smallest heap, which the smalleset number element will be picked.
+    // priority queue, use std::greater<> to make it the smallest heap, which the smalleset number element will be picked, which is the shortest distance node.
     std::priority_queue<std::pair<double, TNodeID>, std::vector<std::pair<double, TNodeID>>, std::greater<>> pq;
 
     // from the source, the source to source distance is 0.
@@ -105,10 +122,31 @@ double CDijkstraTransportationPlanner::FindShortestPath(TNodeID src, TNodeID des
             continue;
         }
 
-        
+        // if reach the node we want, which is dest, start to construct path (predecessors)
+        if (nodeID == dest) {
+            double totalDistance = distances[dest];
+            TNodeID current = dest;
+            while (current != src) {
+                path.insert(path.begin(), current);
+                current = predecessors[current];
+            }
+            path.insert(path.begin(), src); // insert sorce node.
+            return totalDistance;
+        }
+
+        //update the new shortest distance to all neighbor nodes
+        //need to write getneighbors()
+        for (const auto& neighbor : streetMap->GetNeighbors(nodeID)) {
+            double newDist = dist + HaversineDistanceInMiles(nodeID, neighbor);
+            if (newDist < distances[neighbor]) {
+                distances[neighbor] = newDist;
+                predecessors[neighbor] = nodeID;
+                pq.push({ newDist, neighbor });
+            }
+        }
     }
 
-    return NoPathExists; // 如果没有找到路径
+    return NoPathExists; // if not path exists return nopathexists :(
 }
 }
 
