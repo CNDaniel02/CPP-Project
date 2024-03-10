@@ -72,9 +72,44 @@ std::shared_ptr<CStreetMap::SNode> CDijkstraTransportationPlanner::SortedNodeByI
 // Returns the distance in miles between the src and dest nodes of the  
 // shortest path if one exists. NoPathExists is returned if no path exists.  
 // The nodes of the shortest path are filled in the path parameter. 
-double CDijkstraTransportationPlanner::FindShortestPath(TNodeID src, TNodeID dest, std::vector<TNodeID>& path) override {
+double CDijkstraTransportationPlanner::FindShortestPath(TNodeID src, TNodeID dest, std::vector<TNodeID>& path) {
+
+    auto streetMap = DImplementation->config->StreetMap();
+
+
+    // unable to reach the destination
+    constexpr double NoPathExists = std::numeric_limits<double>::infinity();
+
     
-    return 0.0; 
+
+    std::unordered_map<TNodeID, double> distances; //unordered map store the shortest distance from source node to all other nodes
+    std::unordered_map<TNodeID, TNodeID> predecessors; // unordered map store the previous node of every node on the shortest path
+
+    // initialize the distance to all nodes are unreachable
+    for (std::size_t i = 0; i < streetMap->NodeCount(); ++i) {
+        distances[streetMap->NodeByIndex(i)->ID()] = NoPathExists;
+    }
+
+    // priority queue, use std::greater<> to make it the smallest heap, which the smalleset number element will be picked.
+    std::priority_queue<std::pair<double, TNodeID>, std::vector<std::pair<double, TNodeID>>, std::greater<>> pq;
+
+    // from the source, the source to source distance is 0.
+    distances[src] = 0;
+    pq.push({ 0, src });
+
+    while (!pq.empty()) {
+        auto [dist, nodeID] = pq.top();//return the smallest element in pq as [dist, nodeID]
+        pq.pop();
+
+        if (dist > distances[nodeID]) {//if what we found is not the shortest, continue the while
+            continue;
+        }
+
+        
+    }
+
+    return NoPathExists; // 如果没有找到路径
+}
 }
 
 
