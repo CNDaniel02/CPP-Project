@@ -232,38 +232,30 @@ double CDijkstraTransportationPlanner::FindShortestPath(TNodeID src, TNodeID des
 // The transportation mode and nodes of the fastest path are filled in the  
 // path parameter. 
 double CDijkstraTransportationPlanner::FindFastestPath(TNodeID src, TNodeID dest, std::vector<TTripStep>& path) override {
+    
     constexpr double NoPathExists = std::numeric_limits<double>::infinity();
+    double fastestTime = NoPathExists;
+    std::vector<TTripStep> fastestPath;
 
-    //check if the given src and dest are valid
-    auto streetMap = DImplementation->config->StreetMap();
-    if (!streetMap->NodeByID(src) || !streetMap->NodeByID(dest)) {
-        return NoPathExists;
-    }
+    // Speed configurations
+    double walkSpeed = DImplementation->config->WalkSpeed();
+    double bikeSpeed = DImplementation->config->BikeSpeed();
+    double defaultBusSpeed = DImplementation->config->DefaultSpeedLimit(); // Use for bus segments
 
-    //just a psudocode, still need to determine the different method speed
-    auto pathRouter = std::make_unique<CDijkstraPathRouter>();
-    auto streetMap = DImplementation->config->StreetMap();
-    auto busSystem = DImplementation->config->BusSystem();
-
-
-    //find shortest path via pathrouter
-    std::vector<TVertexID> vertexPath;
-    double time = pathRouter->FindShortestPath(srcVertexId, destVertexId, vertexPath);
-    if (time == CDijkstraPathRouter::NoPathExists) {
-        return NoPathExists;
-    }
-
-
-    //Need to wait to see the AddVertex function
-    for (auto vertexId : vertexPath) {
-        
-        auto nodeTag = std::any_cast<TNodeID>(pathRouter->GetVertexTag(vertexId));
-        path.push_back({ ETransportationMode::Walk, nodeTag }); 
-    }
-
-    return time;
+    // Path routers for each transportation mode
+    CDijkstraPathRouter walkBikeRouter;
+    CDijkstraPathRouter busRouter;
 
     
+
+
+
+
+    if (fastestTime == NoPathExists) {
+        return NoPathExists;
+    }
+    path = fastestPath;
+    return fastestTime;
 }
 
 
@@ -336,3 +328,19 @@ bool CDijkstraTransportationPlanner::GetPathDescription(const std::vector<TTripS
 
     return true;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
