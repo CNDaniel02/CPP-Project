@@ -22,23 +22,59 @@
 #include <unordered_set>
 #include <any>
 
+struct CDijkstraTransportationPlanner::SImplementation {
+    std::shared_ptr<SConfiguration> config;
+    std::unique_ptr<CDijkstraPathRouter> pathRouter; // CDijkstraPathRouter
+
+    SImplementation() : pathRouter(std::make_unique<CDijkstraPathRouter>()) {}
+};
+
 
 // CDijkstraTransportationPlanner member functions
 // Constructor for the Dijkstra Transportation Planner 
-CDijkstraTransportationPlanner(std::shared_ptr<SConfiguration> config) :DImplementation(std::make_unique<SImplementation>()) {
-    auto pathRouter = std::make_unique<CDijkstraPathRouter>();
-    DImplementation->config = config;
-    auto streetMap = config->StreetMap();
+CDijkstraTransportationPlanner::CDijkstraTransportationPlanner(std::shared_ptr<SConfiguration> config)
+    : DImplementation(std::make_unique<SImplementation>()) {
+    DImplementation->config = config; // store the configuration
 
+    auto streetMap = config->StreetMap(); // access the street map from config
+
+    //map NodeIDs to VertexIDs to build edges later
+    std::unordered_map<CStreetMap::TNodeID, CPathRouter::TVertexID> nodeToVertexMap;
+
+    // For each node in street map add a vertex to the pathrouter
     for (std::size_t i = 0; i < streetMap->NodeCount(); ++i) {
         auto node = streetMap->NodeByIndex(i);
-        
-        auto vertexId = pathRouter->AddVertex(node); 
-
-        
+        auto vertexId = DImplementation->pathRouter->AddVertex(node->ID()); // use nodeID as vertex tag
+        nodeToVertexMap[node->ID()] = vertexId;
     }
 
-    DImplementation->pathRouter = std::move(pathRouter);
+    //create edges based on the ways in the street map
+    for (std::size_t i = 0; i < streetMap->WayCount(); ++i) {
+        auto way = streetMap->WayByIndex(i);
+
+        // iterate each node in the way to connect them
+        for (std::size_t j = 0; j < way->NodeCount() - 1; ++j) {
+            auto srcNodeId = way->GetNodeID(j);
+            auto destNodeId = way->GetNodeID(j + 1);
+
+            //retrieve correspond vertexID
+            auto srcVertexId = nodeToVertexMap[srcNodeId];
+            auto destVertexId = nodeToVertexMap[destNodeId];
+
+            // getdistance between nodes as edge weight
+            auto srcNode = streetMap->NodeByID(srcNodeId);
+            auto destNode = streetMap->NodeByID(destNodeId);
+            double weight = GeographicUtils::HaversineDistanceInMiles(srcNode->Location(), destNode->Location());
+
+            // add edge to pathrouter
+            DImplementation->pathRouter->AddEdge(srcVertexId, destVertexId, weight);
+
+            //if bidir, add one more edge
+            if (!way->HasAttribute("oneway") || way->GetAttribute("oneway") != "yes") {
+                DImplementation->pathRouter->AddEdge(destVertexID, srcVertexID, weight);
+            }
+        }
+    }
 }
 
 // Destructor for the Dijkstra Transportation Planner 
