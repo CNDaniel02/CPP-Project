@@ -225,7 +225,7 @@ double CDijkstraTransportationPlanner::FindFastestPath(TNodeID src, TNodeID dest
         path.push_back({ ETransportationMode::Walk, nodeTag }); 
     }
 
-    return time
+    return time;
 
     
 }
@@ -236,6 +236,67 @@ double CDijkstraTransportationPlanner::FindFastestPath(TNodeID src, TNodeID dest
 // Returns true if the path description is created. Takes the trip steps path 
 // and converts it into a human readable set of steps.
 bool CDijkstraTransportationPlanner::GetPathDescription(const std::vector<TTripStep>& path, std::vector<std::string>& desc) const override {
-    
-    return false;
+
+    if (path.empty()) {
+        return false;
+    }
+
+    auto streetMap = DImplementation->config->StreetMap();
+    std::string lastStreetName;
+    ETransportationMode lastMode = ETransportationMode::Walk; // initial mode walk
+
+    for (size_t i = 0; i < path.size(); ++i) {
+
+
+        const auto& [mode, nodeID] = path[i];
+        std::string currentStreetName;
+        std::string direction;
+
+        auto node = streetMap->NodeByID(nodeID);
+        if (!node) { continue; } // if invalid node, pass
+
+
+
+        // get current node streetname
+        if (node->HasAttribute("name")) {
+            currentStreetName = node->GetAttribute("name");
+        }
+
+
+
+        // get direction
+        if (i > 0) {
+            auto prevNode = streetMap->NodeByID(path[i - 1].second);
+            if (prevNode && node) {
+                direction = SGeographicUtils::BearingToDirection(SGeographicUtils::CalculateBearing(prevNode->Location(), node->Location()));
+            }
+        }
+
+        // create desc
+        std::string stepDesc;
+        if (!currentStreetName.empty() && mode != ETransportationMode::Bus) {
+            stepDesc = "Walk along " + currentStreetName;
+            if (!direction.empty()) {
+                stepDesc += " towards " + direction;
+            }
+        }
+        else if (mode == ETransportationMode::Bus && !lastStreetName.empty()) {
+            stepDesc = "Take the bus towards " + lastStreetName; 
+        }
+        else if (!direction.empty()) {
+            stepDesc = "Walk toward " + direction;
+        }
+        else {
+            stepDesc = "Continue";
+        }
+
+        // update the last mode and street name
+        lastStreetName = currentStreetName;
+        lastMode = mode;
+
+        
+        desc.push_back(stepDesc);
+    }
+
+    return true;
 }
