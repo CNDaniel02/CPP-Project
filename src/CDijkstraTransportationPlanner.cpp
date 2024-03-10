@@ -3,7 +3,7 @@
 #include "CDijkstraPathRouter.h"
 #include "OpenStreetMap.h"
 #include "TransportationPlannerConfig.h"
-#include "TransportationPlannerConfig.h"
+#include "TransportationPlanner.h"
 #include "BusSystem.h"
 #include "StreetMap.h"
 #include "DSVReader.h"
@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <functional>
 #include <unordered_set>
+#include <any>
 
 
 // CDijkstraTransportationPlanner member functions
@@ -203,13 +204,30 @@ double CDijkstraTransportationPlanner::FindFastestPath(TNodeID src, TNodeID dest
         return NoPathExists;
     }
 
-    std::unordered_map<TNodeID, double> fastestTimes;
-    std::unordered_map<TNodeID, TTripStep> predecessors;
+    //just a psudocode, still need to determine the different method speed
+    auto pathRouter = std::make_unique<CDijkstraPathRouter>();
+    auto streetMap = DImplementation->config->StreetMap();
+    auto busSystem = DImplementation->config->BusSystem();
 
 
+    //find shortest path via pathrouter
+    std::vector<TVertexID> vertexPath;
+    double time = pathRouter->FindShortestPath(srcVertexId, destVertexId, vertexPath);
+    if (time == CDijkstraPathRouter::NoPathExists) {
+        return NoPathExists;
+    }
 
 
-    return NoPathExists;
+    //Need to wait to see the AddVertex function
+    for (auto vertexId : vertexPath) {
+        
+        auto nodeTag = std::any_cast<TNodeID>(pathRouter->GetVertexTag(vertexId));
+        path.push_back({ ETransportationMode::Walk, nodeTag }); 
+    }
+
+    return time
+
+    
 }
 
 
