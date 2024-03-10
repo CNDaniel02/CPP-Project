@@ -195,8 +195,21 @@ double CDijkstraTransportationPlanner::FindShortestPath(TNodeID src, TNodeID des
 // The transportation mode and nodes of the fastest path are filled in the  
 // path parameter. 
 double CDijkstraTransportationPlanner::FindFastestPath(TNodeID src, TNodeID dest, std::vector<TTripStep>& path) override {
-    
-    return 0.0; 
+    constexpr double NoPathExists = std::numeric_limits<double>::infinity();
+
+    //check if the given src and dest are valid
+    auto streetMap = DImplementation->config->StreetMap();
+    if (!streetMap->NodeByID(src) || !streetMap->NodeByID(dest)) {
+        return NoPathExists;
+    }
+
+    std::unordered_map<TNodeID, double> fastestTimes;
+    std::unordered_map<TNodeID, TTripStep> predecessors;
+
+
+
+
+    return NoPathExists;
 }
 
 
