@@ -13,11 +13,11 @@ struct CTransportationPlannerCommandLine::SImplementation {
     std::shared_ptr<CDataFactory> Results;
     std::shared_ptr<CTransportationPlanner> Planner;
 
-    SImplementation(std::shared_ptr<CDataSource> commandsrc,std::shared_ptr<CDataSink> outsink,std::shared_ptr<CDataSink> errorsink,std::shared_ptr<CDataFactory> results,std::shared_ptr<CTransportationPlanner> planner): CmdSource(cmdsrc), OutSink(outsink), ErrSink(errsink), Results(results), Planner(planner) {}
+    SImplementation(std::shared_ptr<CDataSource> commandsrc,std::shared_ptr<CDataSink> outsink,std::shared_ptr<CDataSink> ErrorSink,std::shared_ptr<CDataFactory> results,std::shared_ptr<CTransportationPlanner> planner): CommandSource(CommandSource), OutSink(outsink), ErrorSink(ErrorSink), Results(results), Planner(planner) {}
 };
 
 
-CTransportationPlannerCommandLine::CTransportationPlannerCommandLine(std::shared_ptr<CDataSource> commandsrc,std::shared_ptr<CDataSink> outsink,std::shared_ptr<CDataSink> errorsink,std::shared_ptr<CDataFactory> results,std::shared_ptr<CTransportationPlanner> planner): DImplementation(std::make_unique<SImplementation>(cmdsrc, outsink, errsink, results, planner)) {}
+CTransportationPlannerCommandLine::CTransportationPlannerCommandLine(std::shared_ptr<CDataSource> commandsrc,std::shared_ptr<CDataSink> outsink,std::shared_ptr<CDataSink> ErrorSink,std::shared_ptr<CDataFactory> results,std::shared_ptr<CTransportationPlanner> planner): DImplementation(std::make_unique<SImplementation>(CommandSource, outsink, ErrorSink, results, planner)) {}
 
 CTransportationPlannerCommandLine::~CTransportationPlannerCommandLine() {}
 
@@ -40,13 +40,13 @@ bool CTransportationPlannerCommandLine::ProcessCommands() {
     std::string line;
     char ch;
 
-    while (!DImplementation->CmdSrc->End()) {
+    while (!DImplementation->CommandSource->End()) {
         DImplementation->OutSink->Put('>'); // Prompt for input
         DImplementation->OutSink->Put(' ');
         line.clear();
 
         // Read a line of input
-        while (DImplementation->CmdSrc->Get(ch) && ch != '\n') {
+        while (DImplementation->CommandSource->Get(ch) && ch != '\n') {
             line += ch;
         }
 
@@ -75,17 +75,17 @@ bool CTransportationPlannerCommandLine::ProcessCommands() {
                     std::ostringstream os;
                     os << "Node " << index << ": id = " << node->ID() << " is at ";
                     auto loc = node->Location();
-                    os << SGeographicUtils::ConvertLLToDMS(loc) << '\n';
+                    os << GeographicUtils::ConvertLLToDMS(loc) << '\n';
                     DImplementation->OutSink->Write(std::vector<char>(os.str().begin(), os.str().end()));
                 }
                 else {
                     std::string erro = "Invalid node parameter, see help.\n";
-                    DImplementation->ErrSink->Write(std::vector<char>(erro.begin(), erro.end()));
+                    DImplementation->ErrorSink->Write(std::vector<char>(erro.begin(), erro.end()));
                 }
             }
             else {
                 std::string erro = "Invalid node command, see help.\n";
-                DImplementation->ErrSink->Write(std::vector<char>(erro.begin(), erro.end()));
+                DImplementation->ErrorSink->Write(std::vector<char>(erro.begin(), erro.end()));
             }
         }
         else if (command == "shortest") {
@@ -100,12 +100,12 @@ bool CTransportationPlannerCommandLine::ProcessCommands() {
                 }
                 else {
                     std::string erro = "Invalid shortest parameter, see help.\n";
-                    DImplementation->ErrSink->Write(std::vector<char>(erro.begin(), erro.end()));
+                    DImplementation->ErrorSink->Write(std::vector<char>(erro.begin(), erro.end()));
                 }
             }
             else {
                 std::string erro = "Invalid shortest command, see help.\n\n";
-                DImplementation->ErrSink->Write(std::vector<char>(erro.begin(), erro.end()));
+                DImplementation->ErrorSink->Write(std::vector<char>(erro.begin(), erro.end()));
             }
         }
 
@@ -123,25 +123,25 @@ bool CTransportationPlannerCommandLine::ProcessCommands() {
                 }
                 else {
                     std::string erro = "Invalid fastest parameter, see help.\n";
-                    DImplementation->ErrSink->Write(std::vector<char>(erro.begin(), erro.end()));
+                    DImplementation->ErrorSink->Write(std::vector<char>(erro.begin(), erro.end()));
                 }
             }
             else {
                 std::string erro = "Invalid fastest command, see help.\n";
-                DImplementation->ErrSink->Write(std::vector<char>(erro.begin(), erro.end()));
+                DImplementation->ErrorSink->Write(std::vector<char>(erro.begin(), erro.end()));
             }
         }
         else if (command == "save") {
             std::string errorMessage = "Error: No path to save.\n";
-            DImplementation->ErrSink->Write(std::vector<char>(errorMessage.begin(), errorMessage.end()));
+            DImplementation->ErrorSink->Write(std::vector<char>(errorMessage.begin(), errorMessage.end()));
         }
         else if (command == "print") {
             std::string errorMessage = "Error: No path description to print.\n";
-            DImplementation->ErrSink->Write(std::vector<char>(errorMessage.begin(), errorMessage.end()));
+            DImplementation->ErrorSink->Write(std::vector<char>(errorMessage.begin(), errorMessage.end()));
         }
         else {
             std::string errorMessage = "Unknown command: " + command + " type help for help.\n";
-            DImplementation->ErrSink->Write(std::vector<char>(errorMessage.begin(), errorMessage.end()));
+            DImplementation->ErrorSink->Write(std::vector<char>(errorMessage.begin(), errorMessage.end()));
         }
         DImplementation->OutSink->Put('>'); // Prompt for input
         DImplementation->OutSink->Put(' ');

@@ -11,15 +11,17 @@ LDFLAGS = -lgtest -lgtest_main -lpthread -lexpat
 
 all: directories runtests
 
-runtests:  $(BIN_DIR)/testdpr $(BIN_DIR)/testcsvbsi $(BIN_DIR)/testosm   #$(BIN_DIR)/testcsvbs 
-	@echo "dpr tests..."
+runtests:  $(BIN_DIR)/testdpr $(BIN_DIR)/testcsvbsi $(BIN_DIR)/testosm $(BIN_DIR)/testtpcl $(BIN_DIR)/testtp
+	@echo "Running DijkstraPathRouter tests..."
 	@$(BIN_DIR)/testdpr
-	@echo "bsi tests..."
+	@echo "Running CSVBusSystemIndexer tests..."
 	@$(BIN_DIR)/testcsvbsi
-	$(BIN_DIR)/testosm
-
-
-
+	@echo "Running OpenStreetMap tests..."
+	@$(BIN_DIR)/testosm
+	@echo "Running Transportation Planner CommandLine tests..."
+	@$(BIN_DIR)/testtpcl
+	@echo "Running CSV OSM Transportation Planner tests..."
+	@$(BIN_DIR)/testtp
 
 
 $(BIN_DIR)/testcsvbs: $(OBJ_DIR)/CSVBusSystemTest.o $(OBJ_DIR)/CSVBusSystem.o $(OBJ_DIR)/DSVReader.o $(OBJ_DIR)/StringDataSource.o
@@ -32,10 +34,6 @@ $(BIN_DIR)/testosm: $(OBJ_DIR)/OSMTest.o $(OBJ_DIR)/OpenStreetMap.o $(OBJ_DIR)/X
 
 $(BIN_DIR)/testdpr: $(OBJ_DIR)/DijkstraPathRouterTest.o $(OBJ_DIR)/DijkstraPathRouter.o 
 	$(CXX) $^ -o $@ $(LDFLAGS)
-
-#$(BIN_DIR)/testcsvbsi: $(OBJ_DIR)/CSVBusSystemIndexerTest.o $(OBJ_DIR)/BusSystemIndexer.o
-#	$(CXX) $^ -o $@ $(LDFLAGS)
-
 
 
 $(OBJ_DIR)/StringDataSource.o: $(SRC_DIR)/StringDataSource.cpp $(INC_DIR)/StringDataSource.h
@@ -72,11 +70,31 @@ $(OBJ_DIR)/PathRouter.o: $(SRC_DIR)/PathRouter.cpp $(INC_DIR)/PathRouter.h
 $(OBJ_DIR)/CSVBusSystemIndexerTest.o: $(TEST_SRC_DIR)/CSVBusSystemIndexerTest.cpp $(INC_DIR)/BusSystemIndexer.h $(INC_DIR)/StringDataSource.h $(INC_DIR)/DSVReader.h
 	$(CXX) -c $< -o $@ $(CXXFLAGS)
 
-#$(OBJ_DIR)/BusSystemIndexer.o: $(SRC_DIR)/BusSystemIndexer.cpp $(INC_DIR)/BusSystemIndexer.h $(INC_DIR)/StringDataSource.h $(INC_DIR)/DSVReader.h
-#	$(CXX) -c $< -o $@ $(CXXFLAGS)
 
-#$(OBJ_DIR)/StringDataSource.o: $(SRC_DIR)/StringDataSource.cpp $(INC_DIR)/StringDataSource.h
-#	$(CXX) -c $< -o $@ $(CXXFLAGS)
+# 添加新的源文件到对应的对象文件的规则
+$(OBJ_DIR)/CDijkstraTransportationPlanner.o: $(SRC_DIR)/CDijkstraTransportationPlanner.cpp $(INC_DIR)/DijkstraTransportationPlanner.h
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(OBJ_DIR)/GeographicUtils.o: $(SRC_DIR)/GeographicUtils.cpp $(INC_DIR)/GeographicUtils.h
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(OBJ_DIR)/TransportationPlannerCommandLine.o: $(SRC_DIR)/CTransportationPlannerCommandLine.cpp $(INC_DIR)/TransportationPlannerCommandLine.h
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+# 测试文件的编译规则
+$(OBJ_DIR)/CSVOSMTransportationPlannerTest.o: $(TEST_SRC_DIR)/CSVOSMTransportationPlannerTest.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(OBJ_DIR)/TPCommandLineTest.o: $(TEST_SRC_DIR)/TPCommandLineTest.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+# 添加两个新的测试可执行文件的生成规则
+$(BIN_DIR)/testtpcl: $(OBJ_DIR)/TransportationPlannerCommandLine.o $(OBJ_DIR)/TPCommandLineTest.o
+	$(CXX) $^ -o $@ $(LDFLAGS)
+
+$(BIN_DIR)/testtp: $(OBJ_DIR)/CSVOSMTransportationPlannerTest.o $(OBJ_DIR)/CDijkstraTransportationPlanner.o $(OBJ_DIR)/GeographicUtils.o
+	$(CXX) $^ -o $@ $(LDFLAGS)
+
 
 $(BIN_DIR)/testcsvbsi: $(OBJ_DIR)/BusSystemIndexer.o $(OBJ_DIR)/DSVReader.o $(OBJ_DIR)/XMLReader.o $(OBJ_DIR)/StringDataSource.o $(OBJ_DIR)/CSVBusSystem.o $(OBJ_DIR)/CSVBusSystemIndexerTest.o
 	$(CXX) -o $(BIN_DIR)/testcsvbsi $(CXXFLAGS) $(OBJ_DIR)/BusSystemIndexer.o $(OBJ_DIR)/DSVReader.o $(OBJ_DIR)/XMLReader.o $(OBJ_DIR)/StringDataSource.o $(OBJ_DIR)/CSVBusSystem.o $(OBJ_DIR)/CSVBusSystemIndexerTest.o $(LDFLAGS)
