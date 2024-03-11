@@ -257,9 +257,9 @@ double CDijkstraTransportationPlanner::FindShortestPath(TNodeID src, TNodeID des
 // The transportation mode and nodes of the fastest path are filled in the  
 // path parameter. 
 double CDijkstraTransportationPlanner::FindFastestPath(TNodeID src, TNodeID dest, std::vector<TTripStep>& path) {
-
+    
     constexpr double NoPathExists = std::numeric_limits<double>::infinity();
-
+    /*
     // clear path result
     path.clear();
 
@@ -275,17 +275,28 @@ double CDijkstraTransportationPlanner::FindFastestPath(TNodeID src, TNodeID dest
 
     // choose the fastest path
     double fastestTime = std::min(walkTime, bikeTime);
-    ETransportationMode fastestMode = (fastestTime == walkTime) ? ETransportationMode::Walk : ETransportationMode::Bike;
+    ETransportationMode fastestMode;
+    std::vector<CPathRouter::TVertexID>& fastestPathVertexIDs;
 
+    if (fastestTime == walkTime) {
+        fastestMode = ETransportationMode::Walk;
+        fastestPathVertexIDs = walkPathVertexIDs;
+    }
+    else {
+        fastestMode = ETransportationMode::Bike;
+        fastestPathVertexIDs = bikePathVertexIDs;
+    }
+    
     // fill the final path
-    std::vector<CPathRouter::TVertexID>& fastestPathVertexIDs = (fastestTime == walkTime) ? walkPathVertexIDs : bikePathVertexIDs;
+    
     for (auto vertexID : fastestPathVertexIDs) {
         TNodeID nodeID = std::any_cast<TNodeID>(DImplementation->pathRouter->GetVertexTag(vertexID));
         path.push_back({ fastestMode, nodeID });
     }
 
     return fastestTime;
-
+    */
+    return NoPathExists;
 }
 
 
