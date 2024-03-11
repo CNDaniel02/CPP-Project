@@ -21,9 +21,11 @@
 #include <iomanip>
 
 using TNodeID = CStreetMap::TNodeID;
-static constexpr double NoPathExists = std::numeric_limits<double>::max();
+
+static constexpr double NoPathExists = std::numeric_limits<double>::max(); //Define a constant for indicating that no path exists
 
 
+// Implementation details for the CTransportationPlannerCommandLine class
 struct CTransportationPlannerCommandLine::SImplementation {
     std::shared_ptr<CDataSource> CommandSource;
     std::shared_ptr<CDataSink> OutSink;
@@ -31,16 +33,17 @@ struct CTransportationPlannerCommandLine::SImplementation {
     std::shared_ptr<CDataFactory> Results;
     std::shared_ptr<CTransportationPlanner> Planner;
 
+    // Constructor initializing all data members
     SImplementation(std::shared_ptr<CDataSource> commandsrc, std::shared_ptr<CDataSink> outsink, std::shared_ptr<CDataSink> errorsink, std::shared_ptr<CDataFactory> results, std::shared_ptr<CTransportationPlanner> planner) : CommandSource(commandsrc), OutSink(outsink), ErrorSink(errorsink), Results(results), Planner(planner) {}
 
 };
 
-
+// Constructor
 CTransportationPlannerCommandLine::CTransportationPlannerCommandLine(std::shared_ptr<CDataSource> commandsrc,std::shared_ptr<CDataSink> outsink,std::shared_ptr<CDataSink> ErrorSink,std::shared_ptr<CDataFactory> results,std::shared_ptr<CTransportationPlanner> planner): DImplementation(std::make_unique<SImplementation>(commandsrc, outsink, ErrorSink, results, planner)) {}
-
+// Destructor
 CTransportationPlannerCommandLine::~CTransportationPlannerCommandLine() {}
 
-
+// Help text
 const std::string helpText =
 "------------------------------------------------------------------------\n"
 "help     Display this help menu\n"
@@ -55,6 +58,8 @@ const std::string helpText =
 "save     Saves the last calculated path to file\n"
 "print    Prints the steps for the last calculated path\n";
 
+
+// Function to process user commands
 bool CTransportationPlannerCommandLine::ProcessCommands() {
     std::string line;
     char ch;
@@ -111,7 +116,7 @@ bool CTransportationPlannerCommandLine::ProcessCommands() {
             TNodeID src, dest;
             if (stream >> src >> dest) {
                 std::vector<CTransportationPlanner::TNodeID> path;
-                double distance = DImplementation->Planner->FindShortestPath(src, dest, path);
+                double distance = DImplementation->Planner->FindShortestPath(src, dest, path);//调用FindShortestPath函数
                 if (distance != NoPathExists) {
                     std::ostringstream oss;
                     oss << "Shortest path is " << distance << " mi.\n";
@@ -132,7 +137,7 @@ bool CTransportationPlannerCommandLine::ProcessCommands() {
             TNodeID src, dest;
             if (stream >> src >> dest) { 
                 std::vector<CTransportationPlanner::TTripStep> path;
-                double time = DImplementation->Planner->FindFastestPath(src, dest, path);
+                double time = DImplementation->Planner->FindFastestPath(src, dest, path);//调用FindFastestPath函数
                 if (time != NoPathExists) {
                     int hours = static_cast<int>(time);
                     int minutes = static_cast<int>((time - hours) * 60);
@@ -150,11 +155,11 @@ bool CTransportationPlannerCommandLine::ProcessCommands() {
                 DImplementation->ErrorSink->Write(std::vector<char>(erro.begin(), erro.end()));
             }
         }
-        else if (command == "save") {
+        else if (command == "save") {//This part is not finished
             std::string errorMessage = "Error: No path to save.\n";
             DImplementation->ErrorSink->Write(std::vector<char>(errorMessage.begin(), errorMessage.end()));
         }
-        else if (command == "print") {
+        else if (command == "print") {//This part is not finished
             std::string errorMessage = "Error: No path description to print.\n";
             DImplementation->ErrorSink->Write(std::vector<char>(errorMessage.begin(), errorMessage.end()));
         }
