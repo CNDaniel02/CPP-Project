@@ -222,19 +222,33 @@ double CDijkstraTransportationPlanner::FindShortestPath(TNodeID src, TNodeID des
     }
     */
 
-    //use CDijkstraPathRouter to accomplish this function instead of coding Dijkstra directly
-    std::vector<TNodeID> temppath; // store the nodes on the path 
-    double totalDistance = pathRouter.FindShortestPath(src, dest, temppath); //use CDijkstraPathRouter find the shortest path
+    //convert node ID to vertex ID
+    auto srcVertexId = DImplementation->nodeToVertexMap[src];
+    auto destVertexId = DImplementation->nodeToVertexMap[dest];
 
-    if (totalDistance != CDijkstraPathRouter::NoPathExists) {
-        path = temppath; // if found, update it.
-        return totalDistance;
+
+    //create a vector to store vertex id as vertex path
+    std::vector<CPathRouter::TVertexID> vertexPath;
+
+
+    //use CDijkstraPathRouter find the shortest path
+    double pathLength = DImplementation->pathRouter->FindShortestPath(srcVertexId, destVertexId, vertexPath);
+
+    // if found path, convert back vertex to node ID
+    if (pathLength != CDijkstraPathRouter::NoPathExists) {
+        path.clear(); // clear previous path
+        for (auto vertexId : vertexPath) {
+            if (DImplementation->pathRouter->GetVertexTag(vertexId).has_value()) {
+                TNodeID nodeId = std::any_cast<TNodeID>(DImplementation->pathRouter->GetVertexTag(vertexId));
+                path.push_back(nodeId);
+            }
+        }
+        return pathLength;
     }
     else {
-        return CDijkstraPathRouter::NoPathExists; // if not path exists return nopathexists
+        // if no return nopathexists
+        return CDijkstraPathRouter::NoPathExists;
     }
-    return NoPathExists; // if not path exists return nopathexists :(
-}
 
 
 
@@ -343,19 +357,4 @@ bool CDijkstraTransportationPlanner::GetPathDescription(const std::vector<TTripS
 
     return true;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
