@@ -8,7 +8,7 @@ CFileDataFactory::CFileDataFactory(const std::string &path){
         DBasePath = "./";
     }
     else{
-        DBasePath = DBasePath.back() == '/' ? path : path + "/";
+        DBasePath = path.back() == '/' ? path : path + "/";
     }
 }
 

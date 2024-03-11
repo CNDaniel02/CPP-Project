@@ -67,7 +67,7 @@ struct CDijkstraPathRouter::SImplementation{
                 if (TotalDistance < Distances[DestID]){
                     if (CPathRouter::NoPathExists == Distances[DestID]){
                         PendingVertices.push_back(DestID);
-                    }
+                    }//if the distance to the destination is NoPathExists, add the destination to the pending vertices
                     Distances[DestID] = TotalDistance;
                     Previous[DestID] = CurrentID;
                 }

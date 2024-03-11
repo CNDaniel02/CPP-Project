@@ -155,7 +155,103 @@ CCSVBusSystem::CCSVBusSystem(std::shared_ptr<CDSVReader> stopSrc, std::shared_pt
         }
     }
 
+    // stop
+
     
+    /*
+    while (!stopSrc->End()) {
+        if (stopSrc->ReadRow(row)) {
+            CBusSystem::TStopID id = std::stoull(row[0]);
+            CStreetMap::TNodeID nodeID = std::stoull(row[1]);
+            auto stop = std::make_shared<CStop>(id, nodeID);
+            DImplementation->Stops.push_back(stop);
+            DImplementation->StopsByID[id] = stop;
+        }
+    }
+    */
+
+    /*
+    while (!stopSrc->End()) {
+        if (stopSrc->ReadRow(row) && row.size() >= 2) {
+            try {
+                CBusSystem::TStopID id = std::stoull(row[0]);
+                CStreetMap::TNodeID nodeID = std::stoull(row[1]);
+                auto stop = std::make_shared<CStop>(id, nodeID);
+                DImplementation->Stops.push_back(stop);
+                DImplementation->StopsByID[id] = stop;
+            }
+            catch (const std::exception& e) {
+                std::cerr << "Error converting stop data: " << e.what() << std::endl;
+                // Handle the error or skip this row
+            }
+        }
+    }
+    // route
+
+    while (!routeSrc->End()) {
+        if (routeSrc->ReadRow(row)) {
+            std::string name = row[0];
+            CBusSystem::TStopID stopID = std::stoull(row[1]);
+            auto it = DImplementation->RoutesByName.find(name);
+            if (it == DImplementation->RoutesByName.end()) {
+                auto route = std::make_shared<CRoute>(name, std::vector<CBusSystem::TStopID>{stopID});
+                DImplementation->Routes.push_back(route);
+                DImplementation->RoutesByName[name] = route;
+            } else {
+                std::dynamic_pointer_cast<CRoute>(it->second)->AddStopID(stopID);
+            }
+        }
+    }
+    *///第二版
+
+
+    /*
+    while (!stopSrc->End()) {
+        if (stopSrc->ReadRow(row)) {
+            std::istringstream iss_id(row[0]);
+            CBusSystem::TStopID id;
+            if (!(iss_id >> id)) {
+                std::cerr << "Failed to convert '" << row[0] << "' to TStopID number." << std::endl;
+                continue; // 跳过当前行
+            }
+
+            std::istringstream iss_nodeID(row[1]);
+            CStreetMap::TNodeID nodeID;
+            if (!(iss_nodeID >> nodeID)) {
+                std::cerr << "Failed to convert '" << row[1] << "' to TNodeID number." << std::endl;
+                continue; // 跳过当前行
+            }
+
+            auto stop = std::make_shared<CStop>(id, nodeID);
+            DImplementation->Stops.push_back(stop);
+            DImplementation->StopsByID[id] = stop;
+        }
+    }
+
+    // 处理路线数据
+    while (!routeSrc->End()) {
+        if (routeSrc->ReadRow(row)) {
+            std::string name = row[0];
+            std::istringstream iss_stopID(row[1]);
+            CBusSystem::TStopID stopID;
+            if (!(iss_stopID >> stopID)) {
+                std::cerr << "Failed to convert '" << row[1] << "' to TStopID number." << std::endl;
+                continue; // 跳过当前行
+            }
+
+            auto it = DImplementation->RoutesByName.find(name);
+            if (it == DImplementation->RoutesByName.end()) {
+                auto route = std::make_shared<CRoute>(name, std::vector<CBusSystem::TStopID>{stopID});
+                DImplementation->Routes.push_back(route);
+                DImplementation->RoutesByName[name] = route;
+            }
+            else {
+                std::dynamic_pointer_cast<CRoute>(it->second)->AddStopID(stopID);
+            }
+        }
+    }
+    *///第三版debug
+
     
 
 
