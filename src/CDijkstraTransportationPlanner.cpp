@@ -22,9 +22,11 @@
 #include <unordered_set>
 #include <any>
 
+
 struct CDijkstraTransportationPlanner::SImplementation {
     std::shared_ptr<SConfiguration> config;
     std::unique_ptr<CDijkstraPathRouter> pathRouter; // CDijkstraPathRouter
+
 
     SImplementation() : pathRouter(std::make_unique<CDijkstraPathRouter>()) {}
 };
@@ -32,8 +34,7 @@ struct CDijkstraTransportationPlanner::SImplementation {
 
 // CDijkstraTransportationPlanner member functions
 // Constructor for the Dijkstra Transportation Planner 
-CDijkstraTransportationPlanner::CDijkstraTransportationPlanner(std::shared_ptr<SConfiguration> config)
-    : DImplementation(std::make_unique<SImplementation>()) {
+CDijkstraTransportationPlanner::CDijkstraTransportationPlanner(std::shared_ptr<SConfiguration> config): DImplementation(std::make_unique<SImplementation>()) {
     DImplementation->config = config; // store the configuration
 
     auto streetMap = config->StreetMap(); // access the street map from config
@@ -52,6 +53,10 @@ CDijkstraTransportationPlanner::CDijkstraTransportationPlanner(std::shared_ptr<S
     for (std::size_t i = 0; i < streetMap->WayCount(); ++i) {
         auto way = streetMap->WayByIndex(i);
 
+        // determine the flag
+        bool bikable = way->GetAttribute("bicycle") != "no";
+        bool bidirectional = way->GetAttribute("oneway") != "yes";
+
         // iterate each node in the way to connect them
         for (std::size_t j = 0; j < way->NodeCount() - 1; ++j) {
             auto srcNodeId = way->GetNodeID(j);
@@ -64,15 +69,22 @@ CDijkstraTransportationPlanner::CDijkstraTransportationPlanner(std::shared_ptr<S
             // getdistance between nodes as edge weight
             auto srcNode = streetMap->NodeByID(srcNodeId);
             auto destNode = streetMap->NodeByID(destNodeId);
-            double weight = GeographicUtils::HaversineDistanceInMiles(srcNode->Location(), destNode->Location());
+            double distance = GeographicUtils::HaversineDistanceInMiles(srcNode->Location(), destNode->Location());
+
+            double speedLimit;
+
+            if (way->HasAttribute("maxspeed")) {
+                //if has maxspeed, use it
+                speedLimit = std::stod(way->GetAttribute("maxspeed"));
+            }
+            else {
+                // if not, use default speed
+                speedLimit = config->DefaultSpeedLimit();
+            }
+            double time = distance / speedLimit;
 
             // add edge to pathrouter
-            DImplementation->pathRouter->AddEdge(srcVertexId, destVertexId, weight);
-
-            //if bidir, add one more edge
-            if (!way->HasAttribute("oneway") || way->GetAttribute("oneway") != "yes") {
-                DImplementation->pathRouter->AddEdge(destVertexID, srcVertexID, weight);
-            }
+            DImplementation->pathRouter->AddEdge(srcVertexId, destVertexId, time, bidirectional && bikable); 
         }
     }
 }
@@ -232,33 +244,36 @@ double CDijkstraTransportationPlanner::FindShortestPath(TNodeID src, TNodeID des
 // The transportation mode and nodes of the fastest path are filled in the  
 // path parameter. 
 double CDijkstraTransportationPlanner::FindFastestPath(TNodeID src, TNodeID dest, std::vector<TTripStep>& path) override {
-    
+
     constexpr double NoPathExists = std::numeric_limits<double>::infinity();
-    double fastestTime = NoPathExists;
-    std::vector<TTripStep> fastestPath;
 
-    // Speed configurations
-    double walkSpeed = DImplementation->config->WalkSpeed();
-    double bikeSpeed = DImplementation->config->BikeSpeed();
-    double defaultBusSpeed = DImplementation->config->DefaultSpeedLimit(); // Use for bus segments
-
-    // Path routers for each transportation mode
-    CDijkstraPathRouter walkBikeRouter;
-    CDijkstraPathRouter busRouter;
+    // clear path result
+    path.clear();
 
     
+    std::vector<CPathRouter::TVertexID> walkPathVertexIDs, bikePathVertexIDs;
+    double walkTime = DImplementation->DFastestPathRouterWalkBus.FindShortestPath(DImplementation->DNodeToVertexID[src], DImplementation->DNodeToVertexID[dest], walkPathVertexIDs);
+    double bikeTime = DImplementation->DFastestPathRouterBike.FindShortestPath(DImplementation->DNodeToVertexID[src], DImplementation->DNodeToVertexID[dest], bikePathVertexIDs);
 
 
+    // convert distance to hours
+    walkTime /= DImplementation->config->WalkSpeed();
+    bikeTime /= DImplementation->config->BikeSpeed();
 
+    // choose the fastest path
+    double fastestTime = std::min(walkTime, bikeTime);
+    ETransportationMode fastestMode = (fastestTime == walkTime) ? ETransportationMode::Walk : ETransportationMode::Bike;
 
-    if (fastestTime == NoPathExists) {
-        return NoPathExists;
+    // fill the final path
+    std::vector<CPathRouter::TVertexID>& fastestPathVertexIDs = (fastestTime == walkTime) ? walkPathVertexIDs : bikePathVertexIDs;
+    for (auto vertexID : fastestPathVertexIDs) {
+        TNodeID nodeID = std::any_cast<TNodeID>(DImplementation->pathRouter->GetVertexTag(vertexID));
+        path.push_back({ fastestMode, nodeID });
     }
-    path = fastestPath;
+
     return fastestTime;
+
 }
-
-
 
 
 // Returns true if the path description is created. Takes the trip steps path 
