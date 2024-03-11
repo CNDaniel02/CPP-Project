@@ -1,11 +1,26 @@
 #include "TransportationPlannerCommandLine.h"
+#include "GeographicUtils.h"
+#include "TransportationPlanner.h"
+
+
+#include "DijkstraTransportationPlanner.h"
+#include "DijkstraPathRouter.h"
+#include "OpenStreetMap.h"
+#include "TransportationPlannerConfig.h"
+#include "BusSystem.h"
+#include "StreetMap.h"
+#include "DSVReader.h"
+#include "CSVBusSystem.h"
+
+
+
 #include <string>
 #include <sstream>
 #include <iostream>
 #include <fstream>
 #include <iomanip>
 
-
+using TNodeID = CStreetMap::TNodeID;
 struct CTransportationPlannerCommandLine::SImplementation {
     std::shared_ptr<CDataSource> CommandSource;
     std::shared_ptr<CDataSink> OutSink;
@@ -13,11 +28,12 @@ struct CTransportationPlannerCommandLine::SImplementation {
     std::shared_ptr<CDataFactory> Results;
     std::shared_ptr<CTransportationPlanner> Planner;
 
-    SImplementation(std::shared_ptr<CDataSource> commandsrc,std::shared_ptr<CDataSink> outsink,std::shared_ptr<CDataSink> ErrorSink,std::shared_ptr<CDataFactory> results,std::shared_ptr<CTransportationPlanner> planner): CommandSource(CommandSource), OutSink(outsink), ErrorSink(ErrorSink), Results(results), Planner(planner) {}
+    SImplementation(std::shared_ptr<CDataSource> commandsrc, std::shared_ptr<CDataSink> outsink, std::shared_ptr<CDataSink> errorsink, std::shared_ptr<CDataFactory> results, std::shared_ptr<CTransportationPlanner> planner) : CommandSource(commandsrc), OutSink(outsink), ErrorSink(errorsink), Results(results), Planner(planner) {}
+
 };
 
 
-CTransportationPlannerCommandLine::CTransportationPlannerCommandLine(std::shared_ptr<CDataSource> commandsrc,std::shared_ptr<CDataSink> outsink,std::shared_ptr<CDataSink> ErrorSink,std::shared_ptr<CDataFactory> results,std::shared_ptr<CTransportationPlanner> planner): DImplementation(std::make_unique<SImplementation>(CommandSource, outsink, ErrorSink, results, planner)) {}
+CTransportationPlannerCommandLine::CTransportationPlannerCommandLine(std::shared_ptr<CDataSource> commandsrc,std::shared_ptr<CDataSink> outsink,std::shared_ptr<CDataSink> ErrorSink,std::shared_ptr<CDataFactory> results,std::shared_ptr<CTransportationPlanner> planner): DImplementation(std::make_unique<SImplementation>(commandsrc, outsink, ErrorSink, results, planner)) {}
 
 CTransportationPlannerCommandLine::~CTransportationPlannerCommandLine() {}
 
@@ -75,7 +91,7 @@ bool CTransportationPlannerCommandLine::ProcessCommands() {
                     std::ostringstream os;
                     os << "Node " << index << ": id = " << node->ID() << " is at ";
                     auto loc = node->Location();
-                    os << GeographicUtils::ConvertLLToDMS(loc) << '\n';
+                    os << SGeographicUtils::ConvertLLToDMS(loc) << '\n';
                     DImplementation->OutSink->Write(std::vector<char>(os.str().begin(), os.str().end()));
                 }
                 else {

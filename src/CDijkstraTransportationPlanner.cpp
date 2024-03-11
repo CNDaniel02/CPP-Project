@@ -1,6 +1,6 @@
-#include "DijkastraTransportationPlanner.h"
+#include "DijkstraTransportationPlanner.h"
 #include "GeographicUtils.h" 
-#include "CDijkstraPathRouter.h"
+#include "DijkstraPathRouter.h"
 #include "OpenStreetMap.h"
 #include "TransportationPlannerConfig.h"
 #include "TransportationPlanner.h"
