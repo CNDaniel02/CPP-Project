@@ -5,8 +5,8 @@ SRC_DIR = ./src
 BIN_DIR = ./bin
 INC_DIR = ./include
 TEST_SRC_DIR = ./testsrc
-CXXFLAGS = -std=c++17 -I$(INC_DIR)
-LDFLAGS = -lgtest -lgtest_main -lpthread -lexpat
+CXXFLAGS = -std=c++17 -I$(INC_DIR) -I/usr/local/include
+LDFLAGS = -lgtest -lgtest_main -lgmock -lpthread -lexpat
 
 
 all: directories runtests
@@ -78,6 +78,14 @@ $(OBJ_DIR)/CDijkstraTransportationPlanner.o: $(SRC_DIR)/CDijkstraTransportationP
 $(OBJ_DIR)/GeographicUtils.o: $(SRC_DIR)/GeographicUtils.cpp $(INC_DIR)/GeographicUtils.h
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
+
+$(OBJ_DIR)/StringDataSink.o: $(SRC_DIR)/StringDataSink.cpp $(INC_DIR)/StringDataSink.h
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(OBJ_DIR)/StringDataSource.o: $(SRC_DIR)/StringDataSource.cpp $(INC_DIR)/StringDataSource.h
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+
 $(OBJ_DIR)/TransportationPlannerCommandLine.o: $(SRC_DIR)/CTransportationPlannerCommandLine.cpp $(INC_DIR)/TransportationPlannerCommandLine.h
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
@@ -89,7 +97,7 @@ $(OBJ_DIR)/TPCommandLineTest.o: $(TEST_SRC_DIR)/TPCommandLineTest.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 # 添加两个新的测试可执行文件的生成规则
-$(BIN_DIR)/testtpcl: $(OBJ_DIR)/TransportationPlannerCommandLine.o $(OBJ_DIR)/TPCommandLineTest.o
+$(BIN_DIR)/testtpcl: $(OBJ_DIR)/TransportationPlannerCommandLine.o $(OBJ_DIR)/TPCommandLineTest.o $(OBJ_DIR)/GeographicUtils.o $(OBJ_DIR)/StringDataSink.o $(OBJ_DIR)/StringDataSource.o
 	$(CXX) $^ -o $@ $(LDFLAGS)
 
 $(BIN_DIR)/testtp: $(OBJ_DIR)/CSVOSMTransportationPlannerTest.o $(OBJ_DIR)/CDijkstraTransportationPlanner.o $(OBJ_DIR)/GeographicUtils.o

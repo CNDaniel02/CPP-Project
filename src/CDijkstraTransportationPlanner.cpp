@@ -26,7 +26,7 @@
 struct CDijkstraTransportationPlanner::SImplementation {
     std::shared_ptr<SConfiguration> config;
     std::unique_ptr<CDijkstraPathRouter> pathRouter; // CDijkstraPathRouter
-
+    std::unordered_map<TNodeID, CPathRouter::TVertexID> DNodeToVertexID;
 
     SImplementation() : pathRouter(std::make_unique<CDijkstraPathRouter>()) {}
 };
@@ -69,7 +69,7 @@ CDijkstraTransportationPlanner::CDijkstraTransportationPlanner(std::shared_ptr<S
             // getdistance between nodes as edge weight
             auto srcNode = streetMap->NodeByID(srcNodeId);
             auto destNode = streetMap->NodeByID(destNodeId);
-            double distance = GeographicUtils::HaversineDistanceInMiles(srcNode->Location(), destNode->Location());
+            double distance = SGeographicUtils::HaversineDistanceInMiles(srcNode->Location(), destNode->Location());
 
             double speedLimit;
 
@@ -175,7 +175,7 @@ double CDijkstraTransportationPlanner::FindShortestPath(TNodeID src, TNodeID des
     // unable to reach the destination
     constexpr double NoPathExists = std::numeric_limits<double>::infinity();
 
-    
+
 
     std::unordered_map<TNodeID, double> distances; //unordered map store the shortest distance from source node to all other nodes
     std::unordered_map<TNodeID, TNodeID> predecessors; // unordered map store the previous node of every node on the shortest path
@@ -184,7 +184,7 @@ double CDijkstraTransportationPlanner::FindShortestPath(TNodeID src, TNodeID des
     for (std::size_t i = 0; i < streetMap->NodeCount(); ++i) {
         distances[streetMap->NodeByIndex(i)->ID()] = NoPathExists;
     }
-    
+
     // priority queue, use std::greater<> to make it the smallest heap, which the smalleset number element will be picked, which is the shortest distance node.
     std::priority_queue<std::pair<double, TNodeID>, std::vector<std::pair<double, TNodeID>>, std::greater<>> pq;
 
@@ -214,17 +214,17 @@ double CDijkstraTransportationPlanner::FindShortestPath(TNodeID src, TNodeID des
             path.insert(path.begin(), src); // insert sorce node.
             return totalDistance;
         }
-        
-        
 
-        
+
+
+
         }
     }
     */
 
     //convert node ID to vertex ID
-    auto srcVertexId = DImplementation->nodeToVertexMap[src];
-    auto destVertexId = DImplementation->nodeToVertexMap[dest];
+    auto srcVertexId = DImplementation->DNodeToVertexID[src];
+    auto destVertexId = DImplementation->DNodeToVertexID[dest];
 
 
     //create a vector to store vertex id as vertex path
@@ -250,14 +250,13 @@ double CDijkstraTransportationPlanner::FindShortestPath(TNodeID src, TNodeID des
         return CDijkstraPathRouter::NoPathExists;
     }
 
-
-
+}
 
 // Returns the time in hours for the fastest path between the src and dest  
 // nodes of the if one exists. NoPathExists is returned if no path exists.  
 // The transportation mode and nodes of the fastest path are filled in the  
 // path parameter. 
-double CDijkstraTransportationPlanner::FindFastestPath(TNodeID src, TNodeID dest, std::vector<TTripStep>& path) override {
+double CDijkstraTransportationPlanner::FindFastestPath(TNodeID src, TNodeID dest, std::vector<TTripStep>& path) {
 
     constexpr double NoPathExists = std::numeric_limits<double>::infinity();
 
@@ -292,7 +291,7 @@ double CDijkstraTransportationPlanner::FindFastestPath(TNodeID src, TNodeID dest
 
 // Returns true if the path description is created. Takes the trip steps path 
 // and converts it into a human readable set of steps.
-bool CDijkstraTransportationPlanner::GetPathDescription(const std::vector<TTripStep>& path, std::vector<std::string>& desc) const override {
+bool CDijkstraTransportationPlanner::GetPathDescription(const std::vector<TTripStep>& path, std::vector<std::string>& desc) const  {
 
     if (path.empty()) {
         return false;

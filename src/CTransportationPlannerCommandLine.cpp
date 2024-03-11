@@ -21,6 +21,9 @@
 #include <iomanip>
 
 using TNodeID = CStreetMap::TNodeID;
+static constexpr double NoPathExists = std::numeric_limits<double>::max();
+
+
 struct CTransportationPlannerCommandLine::SImplementation {
     std::shared_ptr<CDataSource> CommandSource;
     std::shared_ptr<CDataSink> OutSink;
@@ -109,7 +112,7 @@ bool CTransportationPlannerCommandLine::ProcessCommands() {
             if (stream >> src >> dest) {
                 std::vector<CTransportationPlanner::TNodeID> path;
                 double distance = DImplementation->Planner->FindShortestPath(src, dest, path);
-                if (distance != CTransportationPlanner::NoPathExists) {
+                if (distance != NoPathExists) {
                     std::ostringstream oss;
                     oss << "Shortest path is " << distance << " mi.\n";
                     DImplementation->OutSink->Write(std::vector<char>(oss.str().begin(), oss.str().end()));
@@ -130,7 +133,7 @@ bool CTransportationPlannerCommandLine::ProcessCommands() {
             if (stream >> src >> dest) { 
                 std::vector<CTransportationPlanner::TTripStep> path;
                 double time = DImplementation->Planner->FindFastestPath(src, dest, path);
-                if (time != CTransportationPlanner::NoPathExists) {
+                if (time != NoPathExists) {
                     int hours = static_cast<int>(time);
                     int minutes = static_cast<int>((time - hours) * 60);
                     std::ostringstream oss;
